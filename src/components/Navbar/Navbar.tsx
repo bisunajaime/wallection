@@ -18,7 +18,6 @@ export function Navbar() {
       <ul className="navbar-links">
         <li><a href="#collection" onClick={(e) => scrollTo(e, 'collection')}>Collection</a></li>
         <li><a href="#featured" onClick={(e) => scrollTo(e, 'featured')}>Featured</a></li>
-        <li><a href="#about" onClick={(e) => scrollTo(e, 'about')}>About</a></li>
       </ul>
     </motion.nav>
   )

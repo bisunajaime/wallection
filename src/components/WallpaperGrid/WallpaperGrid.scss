@@ -32,7 +32,7 @@
 .wallpaper-card {
   break-inside: avoid;
   margin-bottom: 16px;
-  border-radius: 4px;
+  border-radius: $radius;
   overflow: hidden;
   position: relative;
   cursor: pointer;
