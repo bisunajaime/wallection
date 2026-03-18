@@ -1,5 +1,5 @@
-import { useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
 import type { Category, Wallpaper } from '../../types'
 import { useWallpapers } from '../../WallpaperContext'
 import { fadeUp, staggerContainer } from '../../motion'
@@ -9,23 +9,22 @@ import './WallpaperGrid.scss'
 interface WallpaperCardProps {
   wallpaper: Wallpaper
   index: number
+  hidden: boolean
   onClick: () => void
-  skipAnimation: boolean
 }
 
-function WallpaperCard({ wallpaper, index, onClick, skipAnimation }: WallpaperCardProps) {
+function WallpaperCard({ wallpaper, index, hidden, onClick }: WallpaperCardProps) {
   const { compressedUrl, downloadWallpaper } = useWallpapers()
 
   return (
     <motion.div
-      className="wallpaper-card"
-      variants={skipAnimation ? undefined : fadeUp}
-      initial={skipAnimation ? false : 'hidden'}
-      whileInView={skipAnimation ? undefined : 'visible'}
-      viewport={skipAnimation ? undefined : { once: true, margin: '-50px' }}
+      className={`wallpaper-card${hidden ? ' wallpaper-card--hidden' : ''}`}
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-50px' }}
       custom={index % 4}
-      layout
-      onClick={onClick}
+      onClick={hidden ? undefined : onClick}
     >
       <img
         src={compressedUrl(wallpaper.name)}
@@ -56,18 +55,15 @@ interface WallpaperGridProps {
 
 export function WallpaperGrid({ activeCategory, onCardClick, onFilterComplete }: WallpaperGridProps) {
   const { wallpapers } = useWallpapers()
-  const hasFilteredRef = useRef(false)
+  const prevCategory = useRef(activeCategory)
 
-  // After the first render with 'all', any filter change should skip animations
-  const skipAnimation = hasFilteredRef.current
-  if (activeCategory !== 'all' && !hasFilteredRef.current) {
-    hasFilteredRef.current = true
-  }
-
-  const filtered =
-    activeCategory === 'all'
-      ? wallpapers
-      : wallpapers.filter((w) => w.category === activeCategory)
+  // Call onFilterComplete when the category changes
+  useEffect(() => {
+    if (prevCategory.current !== activeCategory) {
+      prevCategory.current = activeCategory
+      onFilterComplete?.()
+    }
+  }, [activeCategory, onFilterComplete])
 
   return (
     <section className="grid-section">
@@ -84,22 +80,20 @@ export function WallpaperGrid({ activeCategory, onCardClick, onFilterComplete }:
 
       <motion.div
         className="wallpaper-grid"
-        variants={skipAnimation ? undefined : staggerContainer}
-        initial={skipAnimation ? false : 'hidden'}
-        whileInView={skipAnimation ? undefined : 'visible'}
-        viewport={skipAnimation ? undefined : { once: true }}
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
       >
-        <AnimatePresence mode="popLayout" onExitComplete={onFilterComplete}>
-          {filtered.map((w, i) => (
-            <WallpaperCard
-              key={w.id}
-              wallpaper={w}
-              index={i}
-              onClick={() => onCardClick(w.id)}
-              skipAnimation={skipAnimation}
-            />
-          ))}
-        </AnimatePresence>
+        {wallpapers.map((w, i) => (
+          <WallpaperCard
+            key={w.id}
+            wallpaper={w}
+            index={i}
+            hidden={activeCategory !== 'all' && w.category !== activeCategory}
+            onClick={() => onCardClick(w.id)}
+          />
+        ))}
       </motion.div>
     </section>
   )

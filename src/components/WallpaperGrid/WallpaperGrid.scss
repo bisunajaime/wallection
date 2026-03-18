@@ -32,11 +32,15 @@
 .wallpaper-card {
   break-inside: avoid;
   margin-bottom: 16px;
-  border-radius: $radius;
+  border-radius: 4px;
   overflow: hidden;
   position: relative;
   cursor: pointer;
   background: $surface;
+
+  &--hidden {
+    display: none;
+  }
 
   img {
     width: 100%;

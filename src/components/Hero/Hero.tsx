@@ -82,8 +82,8 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          A hand-picked gallery of stunning wallpapers for every screen.
-          From mobile to ultrawide — pixel-perfect, always free.
+          AI-generated wallpapers crafted with Qwen and Flux models
+          on a local workstation. From mobile to ultrawide — always free.
         </motion.p>
 
         <motion.button
