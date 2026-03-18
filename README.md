@@ -1,17 +1,20 @@
 # Wallection
 
-A curated wallpaper gallery website — dark, minimal, and cinematic. Browse, preview, and download wallpapers across Mobile, 2K, 4K, and Ultrawide resolutions.
+A curated wallpaper gallery website — dark, minimal, and cinematic. Browse, preview, and download AI-generated wallpapers across Mobile, 2K, 4K, and Ultrawide resolutions.
 
-Built with React, TypeScript, Vite, SCSS, Framer Motion, and Swiper.
+All wallpapers are generated using Qwen and Flux models on a local workstation.
+
+Built with React, TypeScript, Vite, SCSS, Framer Motion, and Swiper. Images served from Cloudflare R2.
 
 ## Features
 
 - Masonry grid with category filtering (All / Mobile / 2K / 4K / Ultrawide)
 - Full-screen carousel with thumbnail strip (swipe, drag, keyboard navigation)
-- Featured collections with curated image sets
+- Featured collections with curated image sets and pack download (zip)
 - Randomized wallpaper order on every page load
 - Rotating hero background (changes every 60 seconds)
 - Image preloader with progress bar
+- Manifest-driven — add wallpapers without redeploying
 - Responsive design (mobile-first)
 - Download originals with one tap
 
@@ -34,52 +37,81 @@ npm run build
 npm run preview
 ```
 
+### Environment variables
+
+Create a `.env` file in the project root:
+
+```bash
+# URL to the manifest.json file
+# Leave empty to use local /manifest.json (default for development)
+VITE_MANIFEST_URL=https://pub-1ca07ff7cfae45c89f44bf84454b2b96.r2.dev/manifest.json
+```
+
 ## Adding Wallpapers
 
-### File structure
+Adding wallpapers requires **no code changes and no redeployment**. Everything is driven by `manifest.json` on Cloudflare R2.
 
-Wallpapers are organized by category in `public/wallpapers/`. Each wallpaper has two files with the **same name** but different extensions:
+### Step 1: Upload images to R2
 
-- `.webp` — compressed version (displayed on the website)
-- `.png` — original version (downloaded by the user)
+Add both files to the category folder in your R2 bucket:
 
 ```
-public/wallpapers/
-├── mobile/
-│   ├── volcano-sunset.webp     ← compressed (displayed)
-│   ├── volcano-sunset.png      ← original (downloaded)
-│   ├── neon-city.webp
-│   ├── neon-city.png
-│   └── ...
-├── 2k/
-│   ├── mountain-fog.webp
-│   ├── mountain-fog.png
-│   └── ...
-├── 4k/
-│   └── ...
-└── ultrawide/
-    └── ...
+mobile/new-wallpaper.webp    ← compressed (displayed on site)
+mobile/new-wallpaper.png     ← original (downloaded by user)
 ```
 
-### Manifest-driven (no redeploy needed)
+Categories: `mobile`, `2k`, `4k`, `ultrawide`
 
-All wallpaper data is defined in `manifest.json`, which the site fetches at runtime. This means you can add, remove, or rearrange wallpapers **without redeploying the site** — just update the manifest and upload the image files.
+### Step 2: Update manifest.json on R2
 
-The manifest lives alongside the images (either in `public/` for local dev, or on your CDN for production).
+Add the image name (without extension) to the category's `images` array:
 
-#### manifest.json structure
+```json
+"mobile": {
+  "resolution": "1080×1920",
+  "images": [
+    "wallpaper-1",
+    "wallpaper-2",
+    "new-wallpaper"
+  ]
+}
+```
+
+Re-upload the updated `manifest.json` to your R2 bucket root. The live site picks up changes on the next page load.
+
+### Adding to a featured collection
+
+Add the image to a featured collection's `images` array using `category/name` format:
 
 ```json
 {
-  "baseUrl": "",
+  "id": "f1",
+  "title": "Mountains.",
+  "desc": "A collection of majestic mountain landscapes",
+  "images": [
+    "2k/wallpaper-2",
+    "mobile/new-wallpaper"
+  ]
+}
+```
+
+The first image is the cover photo. You can mix categories in a single collection. Clicking "Download Pack" on a featured collection downloads all its images as a zip.
+
+## manifest.json
+
+The manifest defines all wallpapers, categories, and featured collections. It's fetched at runtime from R2.
+
+```json
+{
+  "baseUrl": "https://pub-1ca07ff7cfae45c89f44bf84454b2b96.r2.dev",
   "categories": {
     "mobile": {
       "resolution": "1080×1920",
-      "images": ["wallpaper-1", "wallpaper-2", "volcano-sunset"]
+      "images": ["wallpaper-1", "wallpaper-2"]
     },
     "4k": {
       "resolution": "3840×2160",
-      "images": ["aurora", "mountain-fog"]
+      "images": ["wallpaper-1"]
     }
   },
   "featured": [
@@ -87,108 +119,86 @@ The manifest lives alongside the images (either in `public/` for local dev, or o
       "id": "f1",
       "title": "Mountains.",
       "desc": "A collection of majestic mountain landscapes",
-      "images": ["4k/aurora", "mobile/volcano-sunset"]
+      "images": ["4k/wallpaper-1", "mobile/wallpaper-2"]
     }
   ]
 }
 ```
 
-- **`baseUrl`** — empty for local files, or a CDN URL like `https://your-bucket.r2.dev`
-- **`categories`** — each key is a category folder, `images` lists filenames (without extension)
-- **`featured`** — curated collections, `images` uses `category/name` format, first is the cover
+| Field | Description |
+|-------|-------------|
+| `baseUrl` | CDN root URL. Empty string = local `/wallpapers/` fallback |
+| `categories` | Each key is a folder name. `images` lists filenames without extension |
+| `featured` | Curated collections. `images` uses `category/name` format |
 
-#### How URLs are derived
+### How URLs are derived
 
-A wallpaper name like `"4k/aurora"` becomes:
+A wallpaper name like `"4k/wallpaper-1"` becomes:
 
 | Usage | URL |
 |-------|-----|
-| Display (compressed) | `{baseUrl}/4k/aurora.webp` |
-| Download (original) | `{baseUrl}/4k/aurora.png` |
+| Display | `{baseUrl}/4k/wallpaper-1.webp` |
+| Download | `{baseUrl}/4k/wallpaper-1.png` |
 
-When `baseUrl` is empty, it falls back to `/wallpapers/4k/aurora.webp` (local).
-
-### Adding a new wallpaper (step by step)
-
-1. Add both files to the category folder on your CDN (or `public/wallpapers/` locally):
-   ```
-   mobile/new-wallpaper.webp
-   mobile/new-wallpaper.png
-   ```
-2. Add `"new-wallpaper"` to the `mobile.images` array in `manifest.json`
-3. Done — no redeploy needed
-
-### Using remote storage (Cloudflare R2, S3, etc.)
-
-1. Upload your `wallpapers/` folder structure and `manifest.json` to your bucket
-2. Set the `baseUrl` in `manifest.json` to your bucket's public URL:
-   ```json
-   { "baseUrl": "https://your-bucket.r2.dev" }
-   ```
-3. Set the env variable to point to the remote manifest:
-   ```bash
-   VITE_MANIFEST_URL=https://your-bucket.r2.dev/manifest.json
-   ```
-4. Deploy the site — it fetches the manifest from your CDN at runtime
-
-## Featured Collections
-
-Featured collections are curated sets shown in a separate section. Edit the `featured` array in `manifest.json`:
-
-```json
-{
-  "id": "f1",
-  "title": "Mountains.",
-  "desc": "A collection of majestic mountain landscapes",
-  "images": ["2k/wallpaper-2", "4k/wallpaper-1", "mobile/wallpaper-5"]
-}
-```
-
-First image is the cover. You can mix categories in a single collection.
-
-## Project Structure
+## File structure
 
 ```
+public/
+├── manifest.json              # Local copy (dev only, production uses R2)
+└── wallpapers/                # Local compressed images (dev only)
+    ├── mobile/
+    │   └── wallpaper-1.webp
+    ├── 2k/
+    ├── 4k/
+    └── ultrawide/
+
 src/
 ├── components/
-│   ├── BackToTop/          # Scroll-to-collection button
-│   ├── CategoryBar/        # Sticky filter pills
-│   ├── FeaturedSection/    # Curated collection cards
-│   ├── Footer/             # Site footer
-│   ├── Hero/               # Full-bleed hero with rotating background
-│   ├── LoadingScreen/      # Image preloader with progress bar
-│   ├── Navbar/             # Fixed top navigation
-│   ├── Stats/              # Stats section
-│   ├── WallpaperCarousel/  # Lightbox carousel with thumbnail strip
-│   └── WallpaperGrid/      # Masonry grid of wallpaper cards
+│   ├── BackToTop/             # Scroll-to-collection button
+│   ├── CategoryBar/           # Sticky filter pills
+│   ├── DownloadOverlay/       # Pack download progress dialog
+│   ├── FeaturedSection/       # Curated collection cards
+│   ├── Footer/                # Site footer
+│   ├── Hero/                  # Full-bleed hero with rotating background
+│   ├── LoadingScreen/         # Image preloader with progress bar
+│   ├── Navbar/                # Fixed top navigation
+│   ├── WallpaperCarousel/     # Lightbox carousel with thumbnail strip
+│   └── WallpaperGrid/         # Masonry grid of wallpaper cards
 ├── styles/
-│   └── _tokens.scss        # Shared SCSS variables & mixins
-├── App.tsx                 # Root component
-├── WallpaperContext.tsx     # React context (provides data + URL helpers)
-├── data.ts                 # Manifest fetcher & parser
-├── icons.tsx               # SVG icon components
-├── motion.ts               # Framer Motion animation variants
-├── types.ts                # TypeScript interfaces
-├── utils.ts                # Standalone URL helpers (fallback)
-├── index.scss              # Global reset & base styles
-└── main.tsx                # Entry point
+│   └── _tokens.scss           # Shared SCSS variables & mixins
+├── App.tsx                    # Root component
+├── WallpaperContext.tsx        # React context (data + URL helpers + download)
+├── data.ts                    # Manifest fetcher & parser
+├── icons.tsx                  # SVG icon components
+├── motion.ts                  # Framer Motion animation variants
+├── types.ts                   # TypeScript interfaces
+├── utils.ts                   # Standalone URL helpers
+├── index.scss                 # Global reset & base styles
+└── main.tsx                   # Entry point
 ```
 
 ## Deployment
 
-Build and deploy the `dist/` folder to any static host:
+The site is deployed on **Cloudflare Pages** with images on **Cloudflare R2**.
 
-| Platform | URL format |
-|----------|-----------|
-| Vercel | `wallection.vercel.app` |
-| Netlify | `wallection.netlify.app` |
-| Cloudflare Pages | `wallection.pages.dev` |
-| GitHub Pages | `username.github.io/wallection` |
+### Cloudflare Pages setup
 
-```bash
-npm run build
-# Deploy the dist/ folder
-```
+1. Push code to GitHub
+2. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
+3. Build settings:
+   - **Build command:** `npm run build`
+   - **Build output directory:** `dist`
+   - **Environment variable:** `VITE_MANIFEST_URL` = `https://pub-1ca07ff7cfae45c89f44bf84454b2b96.r2.dev/manifest.json`
+4. Deploy — every push to `main` auto-deploys
+
+### Cloudflare R2 setup
+
+1. Create an R2 bucket and enable public access (r2.dev subdomain)
+2. Upload the `wallpapers/` folder structure and `manifest.json`
+3. Add CORS policy (bucket → Settings → CORS):
+   ```json
+   [{ "AllowedOrigins": ["*"], "AllowedMethods": ["GET"], "AllowedHeaders": ["*"] }]
+   ```
 
 ## Tech Stack
 
@@ -198,3 +208,6 @@ npm run build
 - **Framer Motion** — animations & transitions
 - **Swiper** — carousel & thumbnail strip
 - **Lucide React** — icons
+- **JSZip** — pack downloads
+- **Cloudflare R2** — image storage
+- **Cloudflare Pages** — hosting
