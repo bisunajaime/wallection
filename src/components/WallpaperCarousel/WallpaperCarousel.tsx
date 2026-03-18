@@ -83,7 +83,7 @@ export function WallpaperCarousel({ items, initialIndex, onClose }: WallpaperCar
         <div className="carousel-slide-info">
           <button
             className="carousel-download-btn"
-            aria-label="Download wallpaper"
+            aria-label="Open wallpaper in new tab"
             onClick={() => downloadWallpaper(items[activeIndex].name)}
           >
             <Download size={16} />

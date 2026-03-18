@@ -36,7 +36,7 @@ function WallpaperCard({ wallpaper, index, hidden, onClick }: WallpaperCardProps
           <div className="resolution-badge">{wallpaper.resolution}</div>
           <button
             className="download-btn"
-            aria-label="Download wallpaper"
+            aria-label="Open wallpaper in new tab"
             onClick={(e) => { e.stopPropagation(); downloadWallpaper(wallpaper.name) }}
           >
             <DownloadIcon />

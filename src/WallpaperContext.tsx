@@ -49,12 +49,7 @@ export function WallpaperProvider({
   const downloadWallpaper = useCallback(
     (name: string) => {
       const url = originalUrl(name)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = url.split('/').pop() || 'wallpaper.png'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      window.open(url, '_blank', 'noopener,noreferrer')
     },
     [originalUrl],
   )
