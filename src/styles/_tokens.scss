@@ -1,0 +1,31 @@
+// ===== DESIGN TOKENS =====
+$base: #080808;
+$surface: #111111;
+$surface-elevated: #1a1a1a;
+$accent-start: #C0C0C0;
+$accent-end: #8A8A8A;
+$accent-light: #E0E0E0;
+$text-primary: #ffffff;
+$text-secondary: #888888;
+$text-tertiary: #555555;
+$glass: rgba(255, 255, 255, 0.05);
+$glass-border: rgba(255, 255, 255, 0.08);
+$glass-hover: rgba(255, 255, 255, 0.1);
+$radius: 16px;
+$radius-sm: 10px;
+$radius-pill: 100px;
+$ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+@mixin gradient-text {
+  background: linear-gradient(135deg, $accent-start, $accent-end);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@mixin glass-card {
+  background: $glass;
+  border: 1px solid $glass-border;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}

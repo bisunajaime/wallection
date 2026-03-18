@@ -1,0 +1,61 @@
+@use '../../styles/tokens' as *;
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 0 clamp(24px, 4vw, 64px);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba($base, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid $glass-border;
+  transition: background 0.4s ease;
+
+  &-logo {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    @include gradient-text;
+  }
+
+  &-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+
+    a {
+      font-size: 13px;
+      font-weight: 500;
+      color: $text-secondary;
+      letter-spacing: 0.02em;
+      transition: color 0.3s ease;
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 0;
+        height: 1px;
+        background: linear-gradient(90deg, $accent-start, $accent-end);
+        transition: width 0.3s $ease;
+      }
+
+      &:hover {
+        color: $text-primary;
+        &::after { width: 100%; }
+      }
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .navbar-links { display: none; }
+}
